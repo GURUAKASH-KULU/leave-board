@@ -1,0 +1,188 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Leave Board</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Space+Grotesk:wght@500;700&display=swap">
+<style>
+  /* Layout: narrow single column for a Chrome side-panel iframe. A date masthead with three count tiles, then one card per list; each person is a row with initials avatar, name, and a leave range plus duration. */
+  :root {
+    --bg: #f3f5f8;
+    --surface: #ffffff;
+    --raised: #f8fafc;
+    --fg: #17202b;
+    --muted: #64748b;
+    --line: #e1e7ee;
+    --today: #c2410c;
+    --today-soft: #ffedd5;
+    --tomorrow: #a16207;
+    --tomorrow-soft: #fef3c7;
+    --watch: #1d4ed8;
+    --watch-soft: #dbeafe;
+    --ok: #15803d;
+    --font-body: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+    --font-head: "Space Grotesk", "Inter", system-ui, sans-serif;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #0f141b; --surface: #171e27; --raised: #1c2530; --fg: #e8edf3; --muted: #93a1b3; --line: #273240;
+      --today: #fb9b6b; --today-soft: #3b2214;
+      --tomorrow: #f4c352; --tomorrow-soft: #38290d;
+      --watch: #8ab4fa; --watch-soft: #172a4a;
+      --ok: #6ccf8e;
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #0f141b; --surface: #171e27; --raised: #1c2530; --fg: #e8edf3; --muted: #93a1b3; --line: #273240;
+    --today: #fb9b6b; --today-soft: #3b2214;
+    --tomorrow: #f4c352; --tomorrow-soft: #38290d;
+    --watch: #8ab4fa; --watch-soft: #172a4a;
+    --ok: #6ccf8e;
+    color-scheme: dark;
+  }
+  * { box-sizing: border-box; }
+  body {
+    background: var(--bg); color: var(--fg); font-family: var(--font-body); font-size: 14px; line-height: 1.45;
+    padding-block: 18px;
+    padding-left: max(16px, env(safe-area-inset-left, 0px));
+    padding-right: max(16px, env(safe-area-inset-right, 0px));
+  }
+  main { max-width: 560px; margin: 0 auto; display: flex; flex-direction: column; gap: 14px; }
+
+  .mast { display: flex; flex-direction: column; gap: 12px; }
+  .mast-top { display: flex; justify-content: space-between; align-items: flex-end; gap: 12px; flex-wrap: wrap; }
+  .eyebrow { font-size: 11px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+  h1 { font-family: var(--font-head); font-weight: 700; font-size: 26px; line-height: 1.15; margin: 2px 0 0; text-wrap: balance; }
+  .stamp { font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; text-align: right; }
+  .stamp.warn { color: var(--today); font-weight: 600; }
+
+  .tiles { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+  .tile { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+  .tile b { font-family: var(--font-head); font-size: 26px; line-height: 1; font-variant-numeric: tabular-nums; }
+  .tile span { font-size: 12px; color: var(--muted); }
+  .tile.t-today b { color: var(--today); } .tile.t-tomorrow b { color: var(--tomorrow); } .tile.t-watch b { color: var(--watch); }
+
+  section { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; overflow: hidden; min-width: 0; }
+  .head { display: flex; align-items: center; gap: 10px; padding: 12px 14px; }
+  .dot { width: 9px; height: 9px; border-radius: 50%; flex: none; }
+  .s-today .dot { background: var(--today); } .s-tomorrow .dot { background: var(--tomorrow); } .s-watch .dot { background: var(--watch); }
+  h2 { font-family: var(--font-head); font-size: 15px; font-weight: 700; margin: 0; flex: 1; min-width: 0; }
+  .sub { font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; }
+
+  ul { list-style: none; margin: 0; padding: 0; }
+  li { display: flex; align-items: center; gap: 12px; padding: 10px 14px; border-top: 1px solid var(--line); min-width: 0; }
+  .av { width: 34px; height: 34px; border-radius: 50%; flex: none; display: grid; place-items: center; font-size: 12px; font-weight: 600; letter-spacing: .02em; }
+  .s-today .av { background: var(--today-soft); color: var(--today); }
+  .s-tomorrow .av { background: var(--tomorrow-soft); color: var(--tomorrow); }
+  .s-watch .av { background: var(--watch-soft); color: var(--watch); }
+  .body { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
+  .who { font-weight: 600; overflow-wrap: anywhere; }
+  .rng { display: flex; flex-wrap: wrap; gap: 4px 6px; }
+  .chip { font-size: 12px; font-variant-numeric: tabular-nums; background: var(--raised); border: 1px solid var(--line); border-radius: 6px; padding: 1px 7px; color: var(--fg); }
+  .chip.now { border-color: var(--today); color: var(--today); }
+  .meta { font-size: 12px; color: var(--muted); text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; }
+  .empty { padding: 14px; border-top: 1px solid var(--line); color: var(--muted); display: flex; align-items: center; gap: 8px; }
+  .empty::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: var(--ok); flex: none; }
+  .note { color: var(--muted); font-size: 12px; padding: 0 2px; }
+  @media (max-width: 380px) { .meta { white-space: normal; } h1 { font-size: 22px; } }
+  @media (prefers-reduced-motion: no-preference) { section, .tile { transition: border-color .2s; } }
+</style>
+</head>
+<body>
+<main>
+  <div class="mast">
+    <div class="mast-top">
+      <div><div class="eyebrow">Out of office</div><h1 id="title">Leave Board</h1></div>
+      <div class="stamp" id="stamp">Waiting for the first morning run…</div>
+    </div>
+    <div class="tiles">
+      <div class="tile t-today"><b id="n-today">0</b><span>Today</span></div>
+      <div class="tile t-tomorrow"><b id="n-tomorrow">0</b><span id="t-next">Tomorrow</span></div>
+      <div class="tile t-watch"><b id="n-watch">0</b><span>Watchlist</span></div>
+    </div>
+  </div>
+  <section class="s-today"><div class="head"><span class="dot"></span><h2>On leave today</h2><span class="sub" id="d-today"></span></div><ul id="l-today"></ul></section>
+  <section class="s-tomorrow"><div class="head"><span class="dot"></span><h2 id="h-next">On leave tomorrow</h2><span class="sub" id="d-tomorrow"></span></div><ul id="l-tomorrow"></ul></section>
+  <section class="s-watch"><div class="head"><span class="dot"></span><h2>Watchlist: upcoming leave</h2><span class="sub">all future leave</span></div><ul id="l-watch"></ul></section>
+  <div class="note" id="note"></div>
+</main>
+<script>
+(function () {
+  var MONTHS = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+  var WD = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
+  function parse(iso) { var p = String(iso || "").split("-"); return p.length === 3 ? new Date(Date.UTC(+p[0], +p[1] - 1, +p[2])) : null; }
+  function fmt(iso) { var d = parse(iso); return d ? d.getUTCDate() + " " + MONTHS[d.getUTCMonth()] : String(iso || ""); }
+  function fmtLong(iso) { var d = parse(iso); return d ? WD[d.getUTCDay()] + ", " + d.getUTCDate() + " " + MONTHS[d.getUTCMonth()] : ""; }
+  function days(l) { var a = parse(l.from), b = parse(l.to); return a && b ? Math.round((b - a) / 864e5) + 1 : 1; }
+  function range(l) { return l.from === l.to ? fmt(l.from) : fmt(l.from) + " – " + fmt(l.to); }
+  function initials(n) {
+    var w = String(n || "?").replace(/[._-]+/g, " ").trim().split(/\s+/);
+    return ((w[0] || "?")[0] + (w.length > 1 ? w[w.length - 1][0] : "")).toUpperCase();
+  }
+  function el(tag, cls, text) { var e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; }
+  var forDate = "";
+
+  function fill(id, rows, emptyText, mode) {
+    var ul = document.getElementById(id); ul.textContent = "";
+    if (!rows.length) { ul.appendChild(el("li", "empty", emptyText)); return; }
+    rows.forEach(function (r) {
+      var leaves = r.leaves || [{ from: r.from, to: r.to }];
+      var li = el("li");
+      li.appendChild(el("div", "av", initials(r.name)));
+      var body = el("div", "body");
+      body.appendChild(el("div", "who", r.name));
+      var rng = el("div", "rng");
+      leaves.forEach(function (l) {
+        var c = el("span", "chip", range(l));
+        if (mode === "watch" && forDate && l.from <= forDate && forDate <= l.to) { c.className += " now"; c.title = "On leave today"; }
+        rng.appendChild(c);
+      });
+      body.appendChild(rng);
+      li.appendChild(body);
+      var meta;
+      if (mode === "watch") { var t = 0; leaves.forEach(function (l) { t += days(l); }); meta = t + (t === 1 ? " day" : " days"); }
+      else { var l0 = leaves[0], n = days(l0); meta = n > 1 ? "Until " + fmt(l0.to) : "1 day"; }
+      li.appendChild(el("div", "meta", meta));
+      ul.appendChild(li);
+    });
+  }
+
+  function render(d) {
+    forDate = d.forDate || "";
+    var today = d.onLeaveToday || [], tomorrow = d.onLeaveTomorrow || [], watch = d.watchlist || [];
+    document.getElementById("title").textContent = fmtLong(d.forDate) || "Leave Board";
+    var ist = d.generatedAt ? new Date(d.generatedAt).toLocaleString("en-GB", { timeZone: "Asia/Kolkata", hour: "2-digit", minute: "2-digit", hour12: false }) : "";
+    var st = document.getElementById("stamp"); st.className = "stamp"; st.textContent = ist ? "Updated " + ist + " IST" : "";
+    document.getElementById("n-today").textContent = today.length;
+    document.getElementById("n-tomorrow").textContent = tomorrow.length;
+    document.getElementById("n-watch").textContent = watch.length;
+    var nx = d.nextDate || (parse(d.forDate) ? new Date(parse(d.forDate).getTime() + 864e5).toISOString().slice(0, 10) : "");
+    var isTomorrow = parse(nx) && parse(d.forDate) && (parse(nx) - parse(d.forDate)) === 864e5;
+    var nextName = isTomorrow ? "tomorrow" : (parse(nx) ? WD[parse(nx).getUTCDay()] : "tomorrow");
+    document.getElementById("h-next").textContent = "On leave " + nextName;
+    document.getElementById("t-next").textContent = isTomorrow ? "Tomorrow" : WD[parse(nx).getUTCDay()];
+    document.getElementById("d-today").textContent = fmt(d.forDate);
+    document.getElementById("d-tomorrow").textContent = fmt(nx);
+    fill("l-today", today, "Nobody has applied leave for today.");
+    fill("l-tomorrow", tomorrow, "Nobody has applied leave for " + nextName + ".");
+    fill("l-watch", watch, "No upcoming leave for watchlist users.", "watch");
+    document.getElementById("note").textContent = d.note || "";
+  }
+
+  fill("l-today", [], "No data yet."); fill("l-tomorrow", [], "No data yet."); fill("l-watch", [], "No data yet.");
+  var st0 = document.getElementById("stamp");
+  var timer = setTimeout(function () { st0.className = "stamp warn"; st0.textContent = "Can't reach the latest data yet."; }, 10000);
+  function load() {
+    fetch("report.json?t=" + Date.now(), { cache: "no-store" })
+      .then(function (r) { if (!r.ok) throw new Error("http " + r.status); return r.json(); })
+      .then(function (d) { clearTimeout(timer); render(d); })
+      .catch(function () { clearTimeout(timer); st0.className = "stamp warn"; st0.textContent = "Data unavailable."; });
+  }
+  load();
+  setInterval(load, 600000);
+})();
+</script>
+</body>
+</html>
